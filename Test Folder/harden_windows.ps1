@@ -179,7 +179,7 @@ foreach ($rule in $rules) {
 		RemoteAddress = $rule.IP
 		Action = 'Allow'
 		Enabled = $true
-}
+	}
 
 #Remove Present Ruleset (if it exists)
 
@@ -195,7 +195,7 @@ Get-netFirewallRule -DisplayName $rule.Name -ErrorAction SilentlyContinue | Remo
 
 New-NetFirewallRule @params
 Write-Host " Rule Created: $($rule.name) ($($rule.ip))" -ForegroundColor Cyan}
-}
+
 
 #Enable BitLocker
 
@@ -248,7 +248,7 @@ foreach ($svc in $services) {
 
 
 
-Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentCOntrolSet\Control\Lsa" -Name "LSA Enabled" -Value 1 -Type DWord
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" -Name "LSA Enabled" -Value 1 -Type DWord
 
 #Disable LLMNR | Disable NetBIOS
 
@@ -263,7 +263,7 @@ Get-WmiObject Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled } 
 
 
 
-Set-MpPreference -EnableControlledFolderAccess Enabled -EnableNetworkProtection Enabled -MAPSReporting Advanced
+Set-MpPreference -EnableControlledFolderAccess $true -EnableNetworkProtection $true -MAPSReporting Advanced
 
 # Inform End-User
 

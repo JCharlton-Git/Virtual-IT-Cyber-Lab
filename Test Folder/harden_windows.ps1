@@ -176,23 +176,25 @@ function Get-ManagementSubnet {
 }
 
 try {
-    # Configure firewall base profile
-	
-	
-    Set-NetFirewallProfile -Name "Domain,Public,Private" `
-                          -DefaultInboundAction Block `
-                          -DefaultOutboundAction Allow `
-                          -LogFileName "%SystemRoot%\System32\LogFiles\Firewall\pfirewall.log" `
-                          -LogMaxSizeKilobytes 16384 `
-                          -ErrorAction Stop
 
-    # Configure logging separately (some systems have issues with boolean params)
+# Configure firewall base profile
 	
 	
+    Set-NetFirewallProfile 
+	-Name "Domain,Public,Private" `
+	-DefaultInboundAction Block `
+	-DefaultOutboundAction Allow `
+	-LogFileName "%SystemRoot%\System32\LogFiles\Firewall\pfirewall.log" `
+	-LogMaxSizeKilobytes 16384 `
+	-ErrorAction Stop
+	
+
+
+
     Set-NetFirewallProfile -Name "Domain,Public,Private" -LogAllowed $true -ErrorAction SilentlyContinue
     Set-NetFirewallProfile -Name "Domain,Public,Private" -LogBlocked $true -ErrorAction SilentlyContinue
 
-    # Create management rules
+# Create management rules
 	
 	
     $managementSubnet = Get-ManagementSubnet
@@ -204,25 +206,21 @@ try {
 
     foreach ($rule in $rules) {
         try {
-            $ruleParams = @{
-                DisplayName    = $rule.Name
-                Direction      = "Inbound"
-                Protocol       = $rule.Protocol
-                LocalPort      = $rule.Port
-                RemoteAddress  = $rule.IP
-                Action         = "Allow"
-                Enabled        = $true
-                ErrorAction    = "Stop"
-            }
-            New-NetFirewallRule @ruleParams | Out-Null
-            Write-Host "Created rule: $($rule.Name)" -ForegroundColor Cyan
-        } catch {
-            Write-Warning "Failed to create rule $($rule.Name): $_"
-        }
-    }
-    Write-Host "Firewall configuration complete" -ForegroundColor Cyan
+            New-NetFirewallRule
+			-DisplayName $rule.Name `
+			-Protocol $rule.Protocol `
+			-RemoteAddress $ruleIP `
+			-Action Allow `
+			-Enabled $true `
+			-ErrorAction Stop
+		Write-Host "Created rule: $($rule.Name)" -ForegroundColor Cyan
+		} catch {
+			Write-Warning "Failed to create rule $($rule.Name): $_"
+		}
+	}
+	Write-Host "Firewall configuration complete" -ForegroundColor Yellow
 } catch {
-    Write-Warning "Critical firewall configuration error: $_"
+	Write-Warning "Firewall configuration error: $_"
 }
 
 # BitLocker Config

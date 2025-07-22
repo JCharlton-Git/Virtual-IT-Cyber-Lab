@@ -69,12 +69,8 @@ try {
     Write-Warning "Continuing Running - Changes may not be reversible. . ."
 } finally {
     if ($vssService -and $originalStartupType) {
-        try {
-            Stop-Service -Name VSS -Force -ErrorAction SilentlyContinue
-            Set-Service -Name VSS -StartupType $originalStartupType -ErrorAction SilentlyContinue
-        } catch {
-            Write-Warning "Could not restore VSS service to original state: $_"
-        }
+        Stop-Service -Name VSS -Force -ErrorAction SilentlyContinue
+        Set-Service -Name VSS -StartupType $originalStartupType -ErrorAction SilentlyContinue
     }
 }
 

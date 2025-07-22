@@ -27,8 +27,8 @@ Start-Transcript "$env:TEMP\HardenWindows-$(Get-Date -Format yyyyMMdd-HHmmss).lo
 
 
 
-if ($PSVersionTable.PSEdition -ne "Desktop" -or $PSVersionTable.Platform -ne "Win32NT") {
-	Write-Warning "This script requires a Windows Installation as well as PowerShell 5.1 or greater"
+if (-not ($PSVersionTable.PSVersion -ge [version]"5.1" -and ($PSVersionTable.Platform -eq "WIN32NT" -or $PSVersionTable.PSEdition -eq "Core"))) {
+	Write-Warning "Script requires Windows with Powershell 5.1 or greater"
 	exit
 }
 
@@ -219,7 +219,7 @@ foreach ($svc in $services) {
 
 
 
-Set-ItemProperty -Path "KLM:\SYSTEM\CurrentCOntrolSet\Control\Lsa" -Name "LSA Enabled" -Value 1 -Type DWord
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentCOntrolSet\Control\Lsa" -Name "LSA Enabled" -Value 1 -Type DWord
 
 #Disable LLMNR | Disable NetBIOS
 

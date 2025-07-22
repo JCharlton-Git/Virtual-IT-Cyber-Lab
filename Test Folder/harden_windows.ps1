@@ -185,11 +185,10 @@ try {
         DefaultOutboundAction    = "Allow"
         LogFileName              = "%SystemRoot%\System32\LogFiles\Firewall\pfirewall.log"
         LogMaxSizeKilobytes      = 16384
-        LogAllowed               = $true
-        LogBlocked              = $true
-        ErrorAction             = "Stop"
-    }
+    } -ErrorAction Stop
     Set-NetFirewallProfile @fwProfileParams
+	Set-NetFirewallProfile -Name "Domain,Public,Private" -LogAllowed $true -ErrorAction SilentlyContinue
+	Set-NetFirewallProfile -Name "Domain,Public,Private" -LogBlocked $true -ErrorAction SilentlyContinue
 
     # Create management rules
 	

@@ -24,7 +24,7 @@ Windows Hardening Script (v1.2 - Yet another code re-write)
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
-Write-Host "Starting Windows Hardening Script (v1.2)" -ForegroundColor Green
+Write-Host "Starting Windows Hardening Script (v1.2)" -ForegroundColor Cyan
 Write-Warning "System modifications will be made. Ensure files are backed up."
 Start-Transcript "$env:TEMP\HardenWindows-$(Get-Date -Format yyyyMMdd-HHmmss).log"
 
@@ -48,19 +48,22 @@ Write-Host "Creating system restore point . . ." -ForegroundColor Cyan
 $vssService = Get-Service -name VSS -ErrorAction SilentlyContinue
 
 try {
-	if ($vssService -and $vssService.Status -ne 'Running') {
-		$originalStartupType = $vssService.StartType
-		Write-Host "Temporarily enabling Volume Shadow Copy service . . ." -ForegroundColor Cyan
-		Set-Service -Name VSS -StartupType manual -ErrorAction Stop
-		Start-Service -Name VSS -ErrorAction Stop
-		
-		$timeout = 0
-		while ($vssService.Status -ne 'Running' -and $timeout -lt 30) {
-			Start-Sleep -Seconds 1
-			$vssService.Refresh()
-			$timeout++
-		}
-	}
+    if ($vssService -and $vssService.Status -ne 'Running') {
+        $originalStartupType = $vssService.StartType
+        Write-Host "Temporarily enabling Volume Shadow Copy service . . ." -ForegroundColor Cyan
+		Set-Service -Name VSS -StartupType Manual -ErrorAction Stop
+        Start-Service -Name VSS -ErrorAction Stop
+        
+        $timeout = 0
+        while ($vssService.Status -ne 'Running' -and $timeout -lt 30) {
+            Start-Sleep -Seconds 1
+            $vssService.Refresh()
+            $timeout++
+        }
+    }
+} catch {
+    Write-Warning "Failed to start VSS service: $_"
+}
 	
     Checkpoint-Computer -Description "Pre-Hardening Restore Point" -RestorePointType MODIFY_SETTINGS
     Write-Host " System restore point created" -ForegroundColor Cyan
@@ -90,7 +93,7 @@ try {
     if (Test-Path "HKLM:\SYSTEM\CurrentControlSet\Services\mrxsmb10") {
         Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mrxsmb10" -Name "Start" -Value 4 -Type DWord -Force
     }
-    Write-Host " SMBv1 disabled" -ForegroundColor Green
+    Write-Host " SMBv1 disabled" -ForegroundColor Cyan
 } catch {
     Write-Warning "SMBv1 disable failed: $_"
 }
@@ -128,7 +131,7 @@ foreach ($protocol in $tlsConfig.Keys) {
         Write-Warning "Failed to configure $protocol : $_"
     }
 }
-Write-Host " TLS configuration complete" -ForegroundColor Green
+Write-Host " TLS configuration complete" -ForegroundColor Cyan
 
 # Password Policies
 
@@ -156,7 +159,7 @@ revision=1
 try {
     $secpol | Out-File "$env:TEMP\secpol.inf" -Force
     secedit /configure /db "$env:TEMP\secedit.sdb" /cfg "$env:TEMP\secpol.inf" /areas SECURITYPOLICY | Out-Null
-    Write-Host "Password policies applied" -ForegroundColor Green
+    Write-Host "Password policies applied" -ForegroundColor Cyan
 } catch {
     Write-Warning "Password policy configuration failed: $_"
 }
@@ -217,7 +220,7 @@ try {
         }
         New-NetFirewallRule @ruleParams | Out-Null
     }
-    Write-Host "Firewall configured" -ForegroundColor Green
+    Write-Host "Firewall configured" -ForegroundColor Cyan
 } catch {
     Write-Warning "Firewall configuration failed: $_"
 }
@@ -236,7 +239,7 @@ if ((Get-Command -Name "Enable-BitLocker" -ErrorAction SilentlyContinue) -and
         if ($osVolume.VolumeStatus -ne "FullyEncrypted") {
             $securePin = ConvertTo-SecureString -String "ChangeThisTempPassword123!" -AsPlainText -Force
             Enable-BitLocker -MountPoint $env:SystemDrive -EncryptionMethod XtsAes256 -UsedSpaceOnly -TpmAndPinProtector -Pin $securePin -ErrorAction Stop
-            Write-Host " BitLocker enabled with TPM+PIN" -ForegroundColor Green
+            Write-Host " BitLocker enabled with TPM+PIN" -ForegroundColor Cyan
         } else {
             Write-Host " BitLocker already enabled" -ForegroundColor Cyan
         }
@@ -271,7 +274,7 @@ foreach ($service in $servicesToDisable) {
         Write-Warning "Failed to disable $service : $_"
     }
 }
-Write-Host "Risky services disabled" -ForegroundColor Green
+Write-Host "Risky services disabled" -ForegroundColor Cyan
 
 # Miscellaneous Security Fixes
 
@@ -312,7 +315,7 @@ try {
 try {
     $adapters = Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration -Filter "IPEnabled=$true"
     foreach ($adapter in $adapters) {
-        Invoke-CimMethod -InputObject $adapter -MethodName SetTcpipNetbios -Arguments @{TcpipNetbiosOptions = 2} | Out-Null
+        Invoke-CimMethod -InputObject $adapter -MethodName SetTcpipNetbios -Arguments @{TcpipNetbiosOptions = 2} -ErrorAction Stop | Out-Null
     }
 } catch {
     Write-Warning "NetBIOS disable failed: $_"
@@ -321,7 +324,7 @@ try {
 # Windows Defender
 try {
     Set-MpPreference -EnableControlledFolderAccess $true -EnableNetworkProtection $true -MAPSReporting Advanced -ErrorAction Stop
-    Write-Host "Windows Defender protections enabled" -ForegroundColor Green
+    Write-Host "Windows Defender protections enabled" -ForegroundColor Cyan
 } catch {
     Write-Warning "Defender configuration failed: $_"
 }
@@ -340,7 +343,7 @@ Write-Host "- Firewall denies inbound by default"
 Write-Host "- BitLocker encryption enabled (if supported)"
 Write-Host "- Risky services disabled"
 Write-Host "- Additional security protections applied"
-Write-Host " Reboot required for some changes to take effect." -ForegroundColor Magenta
+Write-Host " Reboot required for some changes to take effect." -ForegroundColor Cyan
 Write-Host "Log file: $($(Get-ChildItem "$env:TEMP\HardenWindows-*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName)" -ForegroundColor Cyan
 
 Stop-Transcript

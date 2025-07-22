@@ -45,13 +45,13 @@ if ($PSVersionTable.PSVersion.Major -lt 5 -or $PSVersionTable.PSEdition -ne "Des
 
 
 Write-Host "Creating system restore point . . ." -ForegroundColor Cyan
-$vssService = Get-Service -name VSS -ErrorAction SilentlyContinue
+$vssService = Get-Service -Name VSS -ErrorAction SilentlyContinue
 
 try {
     if ($vssService -and $vssService.Status -ne 'Running') {
         $originalStartupType = $vssService.StartType
         Write-Host "Temporarily enabling Volume Shadow Copy service . . ." -ForegroundColor Cyan
-		Set-Service -Name VSS -StartupType Manual -ErrorAction Stop
+        Set-Service -Name VSS -StartupType Manual -ErrorAction Stop
         Start-Service -Name VSS -ErrorAction Stop
         
         $timeout = 0
@@ -61,26 +61,24 @@ try {
             $timeout++
         }
     }
-} catch {
-    Write-Warning "Failed to start VSS service: $_"
-}
-	
+
     Checkpoint-Computer -Description "Pre-Hardening Restore Point" -RestorePointType MODIFY_SETTINGS
     Write-Host " System restore point created" -ForegroundColor Cyan
 } catch {
     Write-Warning "Restore point creation failed: $_"
-	Write-Warning "Continuing Running - Changes may not be reversible. . ."
+    Write-Warning "Continuing Running - Changes may not be reversible. . ."
 } finally {
-	if ($vssService -and $originalStartupType) {
-		Stop-Service -Name VSS -Force -ErrorAction SilentlyContinue
-		Set-Service -Name VSS -StartupType $originalStartupType -ErrorAction SilentlyContinue
-	} catch {
-		Write-Warning "Could not restore VSS service to original state: $_ "
-	}
-}
+    if ($vssService -and $originalStartupType) {
+        try {
+            Stop-Service -Name VSS -Force -ErrorAction SilentlyContinue
+            Set-Service -Name VSS -StartupType $originalStartupType -ErrorAction SilentlyContinue
+        } catch {
+            Write-Warning "Could not restore VSS service to original state: $_"
+        }
+    }
 }
 
-# DISABLE SMBv1
+# Disable SMBv1
 
 
 
@@ -98,7 +96,7 @@ try {
     Write-Warning "SMBv1 disable failed: $_"
 }
 
-# TLS CONFIG
+# TLS Config
 
 
 
@@ -225,7 +223,7 @@ try {
     Write-Warning "Firewall configuration failed: $_"
 }
 
-# Bitlocker Config
+# BitLocker Config
 
 
 

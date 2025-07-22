@@ -28,20 +28,14 @@ Start-Transcript "$env:TEMP\HardenWindows-$(Get-Date -Format yyyyMMdd-HHmmss).lo
 
 
 
-$isCompatible = $false
-
-if (%PSVersionTable.PSVersion -ge [version]"5.1" -and $PSVersionTable.Platform -eq "Win32NT")
-{
-	$isCompatbile = $true 
-}
-elseif ($PSVersioNTable.PSEdition -eq "Core" -and $IsWindows) {
-	$isCompatible = $True
-}
-
-if {-not $isCompatible) {
-	Write-Warning "This script requires a Windows install with PowerShell version 5.1+ OR PowerShell Core 7+."
+if (-not ($PSVersionTable.PSVersion -ge [version]"5.1" -and $PSVersionTable.PSEdition -eq "Desktop")) {
+	Write-Warning "This script Requires WINDOWS POWERSHELL 5.1+ or greater."
+	Write-Warning "Version Detected: " -ForegroundColor Cyan
+	Write-Warning "PSVersion: $($PSVersionTable.PSVersion)"
+	Write-Warning "PSEdition: $($PSVersionTable.PSEdition)"
 	exit 1
 }
+Write-Host "Running Windows PowerShell $($PSVersionTable.PSVersion)" -ForegroundColor Green
 
 # System Restore
 

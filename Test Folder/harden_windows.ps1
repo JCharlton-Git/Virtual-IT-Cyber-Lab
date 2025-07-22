@@ -54,8 +54,10 @@ try {
 
 
 Disable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol" -NoRestart -ErrorAction SilentlyContinue
-Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" -Name "SMB1" -Value 0 -PropertyType DWord
-Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mrxsmb10" -Name "Start" -Value 4 -Type DWord
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" -Name "SMB1" -Value 0 -Type DWord
+if (Test-Path "HKLM:\SYSTEM\CurrentControlSet\Services\mrxsmb10") {
+	Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mrxsmb10" -Name "Start" -Value 4 -Type DWord
+}
 
 # Disable SSL | Disable TLS (Weak Versions)
 
@@ -63,9 +65,21 @@ Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mrxsmb10" -Name 
 
 
 $protocols =@("SSL 2.0", "SSL 3.0", "TLS 1.0", "TLS 1.1")
-foreach ($proto in $protocols) {
-	Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\$proto\Server" -Name "Enabled" -value 0 -Type DWord
-	Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\$proto\Client" -Name "Enabled" -value 0 -Type DWord
+	foreach ($proto in $protocols) {
+		$serverPath = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\$proto\Server"
+		$clientPath = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\$proto\Client"
+	
+# Create keys if they do not exist
+
+if (-not (Test-Path $serverPath)) {
+	New-Item -Path $serverPath -Force | Out-Null
+}
+if (-not (Test-Path $clientPath)) {
+	New-Item -Path $clientPath -Force | Out-Null
+}
+	Set-ItemProperty -Path "$serverPath" -Name "Enabled" -value 0 -Type DWord
+	Set-ItemProperty -Path "$clientPath" -Name "Enabled" -value 0 -Type DWord
+}
 
 # Enable TLS (1.2+)
 

@@ -44,11 +44,37 @@ if ($PSVersionTable.PSVersion.Major -lt 5 -or $PSVersionTable.PSEdition -ne "Des
 
 
 
+Write-Host "Creating system restore point . . ." -ForegroundColor Cyan
+$vssService = Get-Service -name VSS -ErrorAction SilentlyContinue
+
+try {
+	if ($vssService -and $vssService.Status -ne 'Running') {
+		$originalStartupType = $vssService.StartType
+		Write-Host "Temporarily enabling Volume Shadow Copy service . . ." -ForegroundColor Cyan
+		Set-Service -Name VSS -StartupType manual -ErrorAction Stop
+		Start-Service -Name VSS -ErrorAction Stop
+		
+		$timeout = 0
+		while ($vssService.Status -ne 'Running' -and $timeout -lt 30) {
+			Start-Sleep -Seconds 1
+			$vssService.Refresh()
+			$timeout++
+		}
+	}
+
 try {
     Checkpoint-Computer -Description "Pre-Hardening Restore Point" -RestorePointType MODIFY_SETTINGS
-    Write-Host " System restore point created" -ForegroundColor Green
+    Write-Host " System restore point created" -ForegroundColor Cyan
 } catch {
     Write-Warning "Restore point creation failed: $_"
+	Write-Warning "Continuing Running - Changes may not be reversible. . ."
+} finally {
+	if ($vssService -and $originalStartupType) {
+		Stop-Service -Name VSS -Force -ErrorAction SilentlyContinue
+		Set-Service -Name VSS -StartupType $originalStartupType -ErrorAction SilentlyContinue
+	} catch {
+		Write-Warning "Could not restore VSS service to original state: $_ "
+	}
 }
 
 # DISABLE SMBv1

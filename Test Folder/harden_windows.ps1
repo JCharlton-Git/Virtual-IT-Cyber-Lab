@@ -61,8 +61,7 @@ try {
 			$timeout++
 		}
 	}
-
-try {
+	
     Checkpoint-Computer -Description "Pre-Hardening Restore Point" -RestorePointType MODIFY_SETTINGS
     Write-Host " System restore point created" -ForegroundColor Cyan
 } catch {
@@ -75,6 +74,7 @@ try {
 	} catch {
 		Write-Warning "Could not restore VSS service to original state: $_ "
 	}
+}
 }
 
 # DISABLE SMBv1
@@ -340,7 +340,7 @@ Write-Host "- Firewall denies inbound by default"
 Write-Host "- BitLocker encryption enabled (if supported)"
 Write-Host "- Risky services disabled"
 Write-Host "- Additional security protections applied"
-Write-Host "`nReboot required for some changes to take effect." -ForegroundColor Magenta
+Write-Host " Reboot required for some changes to take effect." -ForegroundColor Magenta
 Write-Host "Log file: $($(Get-ChildItem "$env:TEMP\HardenWindows-*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName)" -ForegroundColor Cyan
 
 Stop-Transcript

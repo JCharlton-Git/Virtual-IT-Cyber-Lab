@@ -141,7 +141,13 @@ Write-Host "Configuring Firewall Rules for $managementSubnet..." -ForegroundColo
 
 
 
-Set-NetFirewallProfile -All -DefaultInboundAction Block -DefaultOutboundAction Allow -LogFileName "%SystemRoot%\System32\LogFiles\Firewall\pfirewall.log" -LogMaxSizeKilobytes 16384 -LogAllowed $true -LogBlocked $true
+Set-NetFirewallProfile -All `
+-DefaultInboundAction Block `
+-DefaultOutboundAction Allow `
+-LogFileName "%SystemRoot%\System32\LogFiles\Firewall\pfirewall.log" `
+-LogMaxSizeKilobytes 16384 `
+-LogAllowed $true `
+-LogBlocked $true
 
 $rules = @(
     @{Name="Allow HTTP"; Port=80; IP="Any"},
@@ -150,6 +156,15 @@ $rules = @(
 )
 
 foreach ($rule in $rules) {
+	New-NetFirewallRule `
+	-DisplayName $rule.Name `
+	-Direction Inbound `
+	-Protocol TCP `
+	-LocalPort $rule.Port `
+	-RemoteAddress $rule.Port `
+	-RemoteAddress $rule.IP `
+	-Enabled $true
+}
     # Remove existing rule if present
 	
 	
@@ -223,7 +238,10 @@ Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled 
 
 
 
-Set-MpPreference -EnableControlledFolderAccess $true -EnableNetworkProtection $true -MAPSReporting Advanced
+Set-MpPreference `
+-EnableControlledFolderAccess $true `
+-EnableNetworkProtection $true `
+-MAPSReporting Advanced
 
 # Completion
 Write-Host "Hardening Process Completed." -ForegroundColor Green

@@ -23,19 +23,31 @@ Write-Host " Starting Windows Hardening Script (v1.0)" -ForegroundColor Green
 Write-Warning " System files WILL BE MODIFIED. Create regular backups. "
 Start-Transcript "$env:TEMP\HardenWindows-$(Get-Date -Format yyyyMMdd-HHmmss).log"
 
-#Check if NetSecurity module is installed
+#Check if script is compatible with Windows and Powershell Versions
 
 
 
-if (-not ($PSVersionTable.PSVersion -ge [version]"5.1" -and ($PSVersionTable.Platform -eq "WIN32NT" -or $PSVersionTable.PSEdition -eq "Core"))) {
-	Write-Warning "Script requires Windows with Powershell 5.1 or greater"
-	exit
+
+$isCompatible = $false
+
+if (%PSVersionTable.PSVersion -ge [version]"5.1" -and $PSVersionTable.Platform -eq "Win32NT")
+{
+	$isCompatbile = $true 
+}
+elseif ($PSVersioNTable.PSEdition -eq "Core" -and $IsWindows) {
+	$isCompatible = $True
 }
 
-
-
+if {-not $isCompatible) {
+	Write-Warning "This script requires a Windows install with PowerShell version 5.1+ OR PowerShell Core 7+."
+	exit 1
+}
 
 # System Restore
+
+
+
+
 try {
 	Checkpoint-Computer -Description "Created Before Windows Hardening Script Run" -RestorePointType MODIFY-SETTINGS
 }	catch	{
@@ -113,15 +125,18 @@ Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders
 
 
 
+
 Write-Host "Configuring Windows Firewall . . ." -ForegroundColor Green
 
 # Deny Inbound by default
 
 
 
+
 Set-NetFirewallProfile -All -DefaultInboundAction Block -DefaultOutboundAction Allow -LogFileName "%SystemRoot%\System32\LogFiles\Firewall\pfirewall.log" -LogMaxSizeKilobytes 16000 -LogAllowed True -LogBlocked True
 
 #Allow Essential Inbound Actions by default (prompted for management subnet)
+
 
 
 
@@ -162,9 +177,11 @@ foreach ($rule in $rules) {
 
 
 
+
 Get-netFirewallRule -DisplayName $rule.Name -ErrorAction SilentlyContinue | Remove-NetFirewallRule
 
 #Create rule
+
 
 
 
@@ -173,6 +190,7 @@ Write-Host " Rule Created: $($rule.name) ($($rule.ip))" -ForegroundColor Cyan}
 }
 
 #Enable BitLocker
+
 
 
 
@@ -203,9 +221,11 @@ Enable-BitLocker -MountPoint $env:SystemDrive -EncryptionMethod XtsAes256 -UsedS
 
 
 
+
 Write-Host "Disabling Unnecessary Services and Applying Necessary Patches" -ForegroundColor Green
 
 #Unsecured Services
+
 
 
 
@@ -219,9 +239,11 @@ foreach ($svc in $services) {
 
 
 
+
 Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentCOntrolSet\Control\Lsa" -Name "LSA Enabled" -Value 1 -Type DWord
 
 #Disable LLMNR | Disable NetBIOS
+
 
 
 
@@ -232,9 +254,11 @@ Get-WmiObject Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled } 
 
 
 
+
 Set-MpPreference -EnableControlledFolderAccess Enabled -EnableNetworkProtection Enabled -MAPSReporting Advanced
 
 # Inform End-User
+
 
 
 

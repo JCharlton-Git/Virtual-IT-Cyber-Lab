@@ -158,7 +158,7 @@ try {
     Write-Warning "Password policy configuration failed: $_"
 }
 
-# Firwall Config
+# Firewall Config
 
 
 
@@ -176,25 +176,21 @@ function Get-ManagementSubnet {
 }
 
 try {
-    # Configure firewall profiles
+    # Configure firewall base profile
 	
 	
-    $fwProfileParams = @{
-        Name                     = "Domain,Public,Private"
-        DefaultInboundAction     = "Block"
-        DefaultOutboundAction    = "Allow"
-        LogFileName              = "%SystemRoot%\System32\LogFiles\Firewall\pfirewall.log"
-        LogMaxSizeKilobytes      = 16384
-		ErrorAction Stop
-    }
-    Set-NetFirewallProfile @fwProfileParams
-	Set-NetFirewallProfile -Name "Domain,Public,Private" -LogAllowed $true -ErrorAction SilentlyContinue
-	Set-NetFirewallProfile -Name "Domain,Public,Private" -LogBlocked $true -ErrorAction SilentlyContinue
+    Set-NetFirewallProfile -Name "Domain,Public,Private" `
+                          -DefaultInboundAction Block `
+                          -DefaultOutboundAction Allow `
+                          -LogFileName "%SystemRoot%\System32\LogFiles\Firewall\pfirewall.log" `
+                          -LogMaxSizeKilobytes 16384 `
+                          -ErrorAction Stop
+
+    # Configure logging separately (some systems have issues with boolean params)
 	
-	Write-Host "Firewall profile configured" -ForegroundColor Cyan
-} catch {
-	Write-Warning "Firewall profile configuration failed: $_"
-}
+	
+    Set-NetFirewallProfile -Name "Domain,Public,Private" -LogAllowed $true -ErrorAction SilentlyContinue
+    Set-NetFirewallProfile -Name "Domain,Public,Private" -LogBlocked $true -ErrorAction SilentlyContinue
 
     # Create management rules
 	
@@ -207,21 +203,26 @@ try {
     )
 
     foreach ($rule in $rules) {
-        $ruleParams = @{
-            DisplayName    = $rule.Name
-            Direction      = "Inbound"
-            Protocol       = $rule.Protocol
-            LocalPort      = $rule.Port
-            RemoteAddress  = $rule.IP
-            Action        = "Allow"
-            Enabled       = $true
-            ErrorAction   = "Stop"
+        try {
+            $ruleParams = @{
+                DisplayName    = $rule.Name
+                Direction      = "Inbound"
+                Protocol       = $rule.Protocol
+                LocalPort      = $rule.Port
+                RemoteAddress  = $rule.IP
+                Action         = "Allow"
+                Enabled        = $true
+                ErrorAction    = "Stop"
+            }
+            New-NetFirewallRule @ruleParams | Out-Null
+            Write-Host "Created rule: $($rule.Name)" -ForegroundColor Cyan
+        } catch {
+            Write-Warning "Failed to create rule $($rule.Name): $_"
         }
-        New-NetFirewallRule @ruleParams | Out-Null
     }
-    Write-Host "Firewall configured" -ForegroundColor Cyan
+    Write-Host "Firewall configuration complete" -ForegroundColor Cyan
 } catch {
-    Write-Warning "Firewall configuration failed: $_"
+    Write-Warning "Critical firewall configuration error: $_"
 }
 
 # BitLocker Config

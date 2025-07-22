@@ -8,3 +8,6 @@
 	HKEY_LOCAL_MACHINE\SYSTEM\Setup\LabConfig
 	BypassTPMCheck = 1 (DWORD)
 	BypassSecureBootCheck =1 (DWORD)
+
+# Miscellanious Extra Issues
+- Skipped microsoft account using "start ms-cxh:localonly" during account creation to use a username and password
